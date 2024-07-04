@@ -3,6 +3,7 @@ from . models import myUser
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.http import Http404
+from django.urls import reverse
 # Create your views here.
 
 """Start of user authentication"""
@@ -15,7 +16,7 @@ def iregister(request):
         pass2       = request.POST['pass2']
 
         if pass1 != pass2:
-            messages.error(request, 'Passwords dont match. Try again')
+            messages.error(request, 'Passwords don\'t match. Try again')
             return render(request, 'users/register.html')
         
         #check for existing email
@@ -23,6 +24,11 @@ def iregister(request):
             messages.error(request,'A user with a siliar email exists. Try another.')
             return render(request, 'users/register.html')
         
+        #check for existing username
+        if myUser.objects.filter(username=username).exists():
+            messages.error(request,'A user with a similar username exists. Try another.')
+            return render(request, 'users/register.html')
+
         user= myUser.objects.create(
             username = username,
             email    =email,
@@ -43,17 +49,16 @@ def ilogin(request):
         try:
             get_object_or_404(myUser, username= username)
             user = authenticate(request, username = username, pass1 = pass1)
-
             if user is not None:
                 login(request,user)
                 messages.success(f'Welcome {username}')
-                return redirect('tasks:index')
-            
+                print('fooo')
+                return redirect('index')
             else:
                 messages.error(request,'Invalid credentials provided')
         except Http404:
-            messages.error(request, f'Account with {username} does not exist. CReate account to continue.')
-        return render(request, 'users/login.html', {'username': username})
+            messages.error(request, f'Account with the username {username} does not exist. CReate account to continue.')
+        return render(request, 'users/login.html', {'username': username, 'pass1':pass1})
     else:
         return render (request, 'users/login.html')
 
